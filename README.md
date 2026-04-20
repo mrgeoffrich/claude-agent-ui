@@ -8,8 +8,8 @@ Built against the event shapes already used by `family-helper` and `mini-infra` 
 
 | Package | What's in it |
 | --- | --- |
-| `@claude-agent-ui/react` | Everything: types (`StreamEvent`, `ContentBlock`, `ConversationMessage`), pure reducer (`applyEvent`), transports (`sseTransport`, `iteratorTransport`), the `useAgentStream` hook, the renderer registry, default components (`ConversationView`, `TextBlock`, `ThinkingBlock`, `ToolUseBlock`), and built-in tool renderers (Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Task, TodoWrite). React is a peer dep (>=18); tree-shaking handles imports that don't need React (reducer, transports). |
-| `@claude-agent-ui/tailwind-preset` | Optional default styling — either import the CSS file or spread the class-name helpers. Components are headless without it. |
+| `@mrgeoffrich/claude-agent-ui-react` | Everything: types (`StreamEvent`, `ContentBlock`, `ConversationMessage`), pure reducer (`applyEvent`), transports (`sseTransport`, `iteratorTransport`), the `useAgentStream` hook, the renderer registry, default components (`ConversationView`, `TextBlock`, `ThinkingBlock`, `ToolUseBlock`), and built-in tool renderers (Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Task, TodoWrite). React is a peer dep (>=18); tree-shaking handles imports that don't need React (reducer, transports). |
+| `@mrgeoffrich/claude-agent-ui-tailwind-preset` | Optional default styling — either import the CSS file or spread the class-name helpers. Components are headless without it. |
 
 ## Design
 
@@ -18,7 +18,7 @@ Built against the event shapes already used by `family-helper` and `mini-infra` 
 - **Pure reducer.** `applyEvent(blocks, event)` is pure — unit-testable, replay-able from persisted events, and safe to use in `setState` updaters.
 - **Renderer registry.** Instead of a 200-line `switch` on tool name, register a component per tool. `DefaultToolRenderer` covers the fallback case; `builtInToolRenderers` gives you nicer defaults for the common SDK tools.
 - **Slots, not monoliths.** `ConversationView` accepts slot overrides for each piece (`Text`, `Thinking`, `ToolUse`, `UserMessage`, `AssistantMessage`) so you can layer in markdown, Radix collapsibles, or shadcn styling without forking.
-- **Headless + optional styles.** Components emit `data-cau-*` attributes; supply your own CSS, Tailwind classes, or import `@claude-agent-ui/tailwind-preset/styles.css` for a zero-config look.
+- **Headless + optional styles.** Components emit `data-cau-*` attributes; supply your own CSS, Tailwind classes, or import `@mrgeoffrich/claude-agent-ui-tailwind-preset/styles.css` for a zero-config look.
 
 ## Quick start
 
@@ -29,8 +29,8 @@ import {
   ConversationView,
   DefaultToolRenderer,
   builtInToolRenderers,
-} from "@claude-agent-ui/react";
-import "@claude-agent-ui/tailwind-preset/styles.css";
+} from "@mrgeoffrich/claude-agent-ui-react";
+import "@mrgeoffrich/claude-agent-ui-tailwind-preset/styles.css";
 
 const transport = sseTransport({
   url: (input) => `/api/conversations/${input.conversationId}/messages`,
@@ -87,7 +87,7 @@ If your events use different names, pass `mapEvent` to `sseTransport` to transla
 ## Custom tool renderers
 
 ```tsx
-import type { ToolRenderer } from "@claude-agent-ui/react";
+import type { ToolRenderer } from "@mrgeoffrich/claude-agent-ui-react";
 
 const DeployRenderer: ToolRenderer = ({ input, result, status }) => (
   <div>
@@ -110,7 +110,7 @@ For MCP tools, register against the full reported name (e.g. `mcp__mini-infra-in
 If you store the raw event stream server-side, rehydrate the UI with `reduceEvents`:
 
 ```ts
-import { reduceEvents } from "@claude-agent-ui/react";
+import { reduceEvents } from "@mrgeoffrich/claude-agent-ui-react";
 
 const blocks = reduceEvents(persistedEvents);
 ```
@@ -123,23 +123,50 @@ Uses a pnpm workspace with TypeScript project references.
 pnpm install
 pnpm build            # build all packages
 pnpm dev              # watch mode for all packages
-pnpm -w --filter @claude-agent-ui/react typecheck
+pnpm -w --filter @mrgeoffrich/claude-agent-ui-react typecheck
 ```
 
 ## Releasing
 
-Tag-driven. A push of a `v*` tag triggers `.github/workflows/publish.yml`, which verifies every `packages/*/package.json` version matches the tag, builds, and publishes both packages to npm with provenance.
+Release-driven. Publishing [`.github/workflows/publish.yml`](.github/workflows/publish.yml) fires when a **GitHub Release** is published, verifies every `packages/*/package.json` version matches the release tag, builds, typechecks, and publishes via **npm Trusted Publishing (OIDC)** — no long-lived `NPM_TOKEN` secret required.
 
 ```bash
 pnpm bump 0.1.1           # or: patch | minor | major
 git commit -am "chore: release v0.1.1"
 git tag v0.1.1
-git push && git push --tags
+git push --follow-tags
+
+gh release create v0.1.1 --generate-notes
 ```
 
-Prerequisites:
-- `NPM_TOKEN` repo secret with `publish` rights on the target scope (Settings → Secrets → Actions).
-- The npm scope in each package's `name` must be one you own. If `@claude-agent-ui` isn't yours, rename to e.g. `@<your-username>/claude-agent-ui-react` before the first publish.
+### One-time setup
+
+The very first publish of each package cannot use OIDC — npm needs the package to exist before a Trusted Publisher can be configured for it. So the rollout is:
+
+1. **First publish (manual, token-based).** From the repo root:
+   ```bash
+   pnpm install
+   pnpm -r build
+   cd packages/react && npm publish
+   cd ../tailwind-preset && npm publish
+   ```
+   Use an **Automation** token from <https://www.npmjs.com/settings/~/tokens> (bypasses 2FA), written to `~/.npmrc`:
+   ```bash
+   npm config set //registry.npmjs.org/:_authToken <npm_xxx>
+   ```
+2. **Configure the `npm` GitHub environment.** In the repo settings → Environments, create an environment called `npm`. (The publish workflow uses `environment: npm`, matching npm's Trusted Publisher.)
+3. **Register a Trusted Publisher for each package.** On npmjs.com → *your package* → Settings → Trusted publishing → Add:
+   - Organization/user: `mrgeoffrich`
+   - Repository: `claude-agent-ui`
+   - Workflow filename: `publish.yml`
+   - Environment: `npm`
+4. **Future releases** — `pnpm bump`, commit + tag + push, then `gh release create`. The workflow handles the rest.
+
+### Requirements
+
+- Node 22.14+ and npm 11.5.1+ (the workflow upgrades npm automatically).
+- `repository.url` in each package.json must exactly match the GitHub repo URL.
+- pnpm does not yet support OIDC publishing ([pnpm#9812](https://github.com/pnpm/pnpm/issues/9812)); the workflow shells out to `npm publish` per package.
 
 ## Status
 

@@ -1,9 +1,9 @@
 /**
- * Helper class-name builders that pair with `@claude-agent-ui/react`'s
+ * Helper class-name builders that pair with `@mrgeoffrich/claude-agent-ui-react`'s
  * `data-cau-*` attributes. Pass into the `className` prop of the matching
  * components when you want the default Tailwind look.
  *
- * Alternatively, import `@claude-agent-ui/tailwind-preset/styles.css` at the
+ * Alternatively, import `@mrgeoffrich/claude-agent-ui-tailwind-preset/styles.css` at the
  * root of your app for raw CSS that targets the same attributes (no Tailwind
  * required).
  */

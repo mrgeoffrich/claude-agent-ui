@@ -1,4 +1,4 @@
-# @claude-agent-ui/react
+# @mrgeoffrich/claude-agent-ui-react
 
 Single-package React UI for Claude Agent SDK message streams. Ships with:
 

@@ -1,8 +1,8 @@
 /*
- * Minimal default stylesheet for @claude-agent-ui/react. Targets the
+ * Minimal default stylesheet for @mrgeoffrich/claude-agent-ui-react. Targets the
  * data-cau-* attributes the components emit. Import once at the app root:
  *
- *   import "@claude-agent-ui/tailwind-preset/styles.css";
+ *   import "@mrgeoffrich/claude-agent-ui-tailwind-preset/styles.css";
  */
 
 [data-cau-conversation] {

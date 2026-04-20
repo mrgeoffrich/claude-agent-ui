@@ -42,7 +42,7 @@ export interface ConversationViewProps {
 /**
  * Default, composable renderer for a full conversation. Headless in the sense
  * that it only applies `data-cau-*` attributes for styling hooks — bring your
- * own CSS or layer in `@claude-agent-ui/tailwind-preset`.
+ * own CSS or layer in `@mrgeoffrich/claude-agent-ui-tailwind-preset`.
  */
 export function ConversationView({
   messages,

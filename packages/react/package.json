@@ -1,7 +1,17 @@
 {
-  "name": "@claude-agent-ui/react",
+  "name": "@mrgeoffrich/claude-agent-ui-react",
   "version": "0.1.0",
   "description": "React hook and components for Claude Agent SDK message streams",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrgeoffrich/claude-agent-ui.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/mrgeoffrich/claude-agent-ui#readme",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -12,12 +22,13 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

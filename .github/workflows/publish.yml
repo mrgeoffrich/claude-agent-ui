@@ -1,19 +1,26 @@
 name: Publish
 
-# Triggers on tag push matching v*.*.* (e.g. v0.1.0, v1.2.3-rc.1).
-# Publishes every package under packages/* whose package.json version
-# matches the tag. Versions must be kept in lockstep — use `pnpm bump`.
+# Fires when a GitHub Release is published. Publishes every package whose
+# version in package.json matches the release tag. Tokenless — npm OIDC
+# Trusted Publishing provides auth and provenance automatically.
+#
+# One-time per package: register a Trusted Publisher on npmjs.com
+# (Settings → Trusted publishing) pointing at this repo, this workflow file,
+# and the "npm" environment.
+#
+# pnpm is used only for the workspace install/build step because
+# pnpm publish does not yet support OIDC (pnpm/pnpm#9812). Publishing itself
+# goes through `npm publish`.
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       contents: read
-      # Required for npm provenance (sigstore-signed publish attestations).
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -24,23 +31,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - run: npm install -g npm@latest
 
-      - name: Verify all package versions match the tag
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify all package versions match the release tag
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          echo "Tag version: $TAG_VERSION"
+          echo "Release tag version: $TAG_VERSION"
           FAIL=0
           for pkg in packages/*/package.json; do
             PKG_NAME=$(node -p "require('./$pkg').name")
             PKG_VERSION=$(node -p "require('./$pkg').version")
             if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-              echo "::error::$PKG_NAME is at $PKG_VERSION but tag is $TAG_VERSION"
+              echo "::error::$PKG_NAME is at $PKG_VERSION but release is $TAG_VERSION"
               FAIL=1
             else
               echo "OK $PKG_NAME@$PKG_VERSION"
@@ -48,10 +56,15 @@ jobs:
           done
           exit $FAIL
 
-      - name: Build
-        run: pnpm -r build
+      - run: pnpm -r build
+
+      - run: pnpm -r typecheck
 
       - name: Publish
-        run: pnpm -r publish --access public --no-git-checks --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in packages/*/; do
+            echo "::group::Publishing $pkg"
+            (cd "$pkg" && npm publish --provenance)
+            echo "::endgroup::"
+          done
