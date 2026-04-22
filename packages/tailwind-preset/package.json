@@ -1,6 +1,6 @@
 {
   "name": "@mrgeoffrich/claude-agent-ui-tailwind-preset",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Optional default Tailwind styles for @mrgeoffrich/claude-agent-ui-react components",
   "license": "MIT",
   "publishConfig": {

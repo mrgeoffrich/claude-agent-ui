@@ -56,6 +56,15 @@ jobs:
 
       - run: pnpm -r typecheck
 
+      - name: Debug publish environment
+        run: |
+          echo "npm version: $(npm --version)"
+          echo "node version: $(node --version)"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          echo "NODE_AUTH_TOKEN set: ${NODE_AUTH_TOKEN:+yes}"
+          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
+          cat "$NPM_CONFIG_USERCONFIG" || echo "(no userconfig file)"
+
       - name: Publish
         run: |
           set -euo pipefail
