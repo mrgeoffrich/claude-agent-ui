@@ -1,6 +1,6 @@
 {
   "name": "@mrgeoffrich/claude-agent-ui-react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React hook and components for Claude Agent SDK message streams",
   "license": "MIT",
   "publishConfig": {
@@ -22,7 +22,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
