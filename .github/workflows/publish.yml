@@ -65,10 +65,12 @@ jobs:
       - name: Publish
         run: |
           set -euo pipefail
+          # pnpm installs npm into PNPM_HOME but doesn't prepend it to PATH,
+          # so the bundled node npm would be used otherwise.
+          export PATH="$PNPM_HOME:$PATH"
+          echo "npm: $(which npm) $(npm --version)"
           for pkg in packages/*/; do
             echo "::group::Publishing $pkg"
-            (cd "$pkg" && npm publish --provenance --access public --verbose) || true
+            (cd "$pkg" && npm publish --provenance --access public)
             echo "::endgroup::"
           done
-          cat /home/runner/.npm/_logs/*.log 2>/dev/null | grep -E "oidc|auth|token|404|403|401" || true
-          exit 1
