@@ -56,16 +56,17 @@ jobs:
 
       - run: pnpm -r typecheck
 
+      - name: Upgrade npm
+        run: |
+          # npm bundled with Node 22.22.2 has a broken self-update (missing
+          # promise-retry). Use pnpm (already available) to install npm globally.
+          pnpm add --global npm@latest
+
       - name: Publish
         run: |
           set -euo pipefail
-          # actions/setup-node exports NODE_AUTH_TOKEN=GITHUB_TOKEN, which npm
-          # substitutes into _authToken in .npmrc, causing auth to fail with
-          # the GitHub token instead of using OIDC. Unset it so the .npmrc
-          # _authToken resolves to empty and npm falls through to OIDC.
-          unset NODE_AUTH_TOKEN
           for pkg in packages/*/; do
             echo "::group::Publishing $pkg"
-            (cd "$pkg" && npm publish --provenance)
+            (cd "$pkg" && npm publish --provenance --access public)
             echo "::endgroup::"
           done
