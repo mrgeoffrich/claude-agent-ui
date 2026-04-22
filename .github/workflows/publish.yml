@@ -67,6 +67,8 @@ jobs:
           set -euo pipefail
           for pkg in packages/*/; do
             echo "::group::Publishing $pkg"
-            (cd "$pkg" && npm publish --provenance --access public)
+            (cd "$pkg" && npm publish --provenance --access public --verbose) || true
             echo "::endgroup::"
           done
+          cat /home/runner/.npm/_logs/*.log 2>/dev/null | grep -E "oidc|auth|token|404|403|401" || true
+          exit 1
