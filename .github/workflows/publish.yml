@@ -56,25 +56,16 @@ jobs:
 
       - run: pnpm -r typecheck
 
-      - name: Debug publish environment
-        run: |
-          echo "npm version: $(npm --version)"
-          echo "node version: $(node --version)"
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
-          echo "NODE_AUTH_TOKEN set: ${NODE_AUTH_TOKEN:+yes}"
-          echo "NPM_CONFIG_USERCONFIG: $NPM_CONFIG_USERCONFIG"
-          cat "$NPM_CONFIG_USERCONFIG" || echo "(no userconfig file)"
-
       - name: Publish
         run: |
           set -euo pipefail
-          # Write a clean .npmrc with only the registry URL — no _authToken —
-          # so npm uses OIDC trusted publishing for auth instead of the GitHub
-          # token that actions/setup-node exports as NODE_AUTH_TOKEN.
-          CLEAN_NPMRC=$(mktemp)
-          echo "registry=https://registry.npmjs.org/" > "$CLEAN_NPMRC"
+          # actions/setup-node exports NODE_AUTH_TOKEN=GITHUB_TOKEN, which npm
+          # substitutes into _authToken in .npmrc, causing auth to fail with
+          # the GitHub token instead of using OIDC. Unset it so the .npmrc
+          # _authToken resolves to empty and npm falls through to OIDC.
+          unset NODE_AUTH_TOKEN
           for pkg in packages/*/; do
             echo "::group::Publishing $pkg"
-            (cd "$pkg" && NPM_CONFIG_USERCONFIG="$CLEAN_NPMRC" npm publish --provenance)
+            (cd "$pkg" && npm publish --provenance)
             echo "::endgroup::"
           done
