@@ -31,6 +31,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          registry-url: https://registry.npmjs.org
 
       - run: pnpm install --frozen-lockfile
 
@@ -56,6 +57,8 @@ jobs:
       - run: pnpm -r typecheck
 
       - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ""
         run: |
           set -euo pipefail
           for pkg in packages/*/; do
