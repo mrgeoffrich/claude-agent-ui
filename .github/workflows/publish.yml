@@ -33,8 +33,6 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
-      - run: npm install -g npm@latest
-
       - run: pnpm install --frozen-lockfile
 
       - name: Verify all package versions match the release tag
